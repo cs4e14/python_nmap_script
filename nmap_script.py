@@ -17,10 +17,10 @@ def detect_syn_scan(packets):
                 syn_packets[(src_ip, dst_ip, dst_port)] = True
                 attacker_ips.add(src_ip)
 
-            elif flags & 0x12 and (dst_ip, src_ip, dst_port) in syn_packets:  # SYN-ACK -> פורט פתוח
+            elif flags & 0x12 and (dst_ip, src_ip, dst_port) in syn_packets:  
                 open_ports[dst_port] = 'Open'
 
-            elif flags & 0x04 and (dst_ip, src_ip, dst_port) in syn_packets:  # RST -> פורט סגור
+            elif flags & 0x04 and (dst_ip, src_ip, dst_port) in syn_packets: 
                 closed_ports[dst_port] = 'Closed'
 
     return open_ports, closed_ports, attacker_ips
@@ -37,19 +37,19 @@ def detect_tcp_scans(packets):
             dst_port = int(packet.tcp.dstport)
             flags = int(packet.tcp.flags, 16)
 
-            if flags == 0x01:  # FIN Scan (-sF)
+            if flags == 0x01:  # (-sF)
                 fin_scans.add((src_ip, dst_ip, dst_port))
                 attacker_ips.add(src_ip)
 
-            elif flags == 0x00:  # NULL Scan (-sN)
+            elif flags == 0x00:  # (-sN)
                 null_scans.add((src_ip, dst_ip, dst_port))
                 attacker_ips.add(src_ip)
 
-            elif flags == 0x29:  # Xmas Scan (-sX)
+            elif flags == 0x29:  #  (-sX)
                 xmas_scans.add((src_ip, dst_ip, dst_port))
                 attacker_ips.add(src_ip)
 
-            elif flags == 0x10 and not (flags & 0x02):  # ACK Scan (-sA)
+            elif flags == 0x10 and not (flags & 0x02):  #  (-sA)
                 ack_scans.add((src_ip, dst_ip, dst_port))
                 attacker_ips.add(src_ip)
 
