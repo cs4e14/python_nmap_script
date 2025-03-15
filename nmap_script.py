@@ -129,3 +129,40 @@ def detect_port_scan(packets):
             ph_scans[src_ip] = "Port Scan (PH)"
 
     return ph_scans
+
+def extract_ntlm_hash(pcap_file):
+    cap = pyshark.FileCapture(pcap_file, display_filter="ntlmssp")
+    ntlm_hashes = []
+
+    for packet in cap:
+        try:
+            if 'NTLMSSP' in packet:
+                if hasattr(packet.ntlmssp, 'lm_hash') and hasattr(packet.ntlmssp, 'ntlm_hash'):
+                    lm_hash = packet.ntlmssp.lm_hash
+                    ntlm_hash = packet.ntlmssp.ntlm_hash
+                    if lm_hash != "None" and ntlm_hash != "None":
+                        print(f"LM Hash: {lm_hash}")
+                        print(f"NTLM Hash: {ntlm_hash}")
+                        ntlm_hashes.append(ntlm_hash)
+        except AttributeError:
+            continue
+
+    return ntlm_hashes
+
+def crack_ntlm_hash(ntlm_hashes, wordlist_path):
+    for ntlm_hash in ntlm_hashes:
+      
+        with open("hashes.txt", "w") as hash_file:
+            hash_file.write(ntlm_hash + "\n")
+        
+      
+        command = [
+            "hashcat", 
+            "-m", "1000",  
+            "-a", "0",     
+            "hashes.txt",  
+            wordlist_path  
+        ]
+        
+        
+        subprocess.run(command)
