@@ -91,3 +91,41 @@ def detect_udp_scan(packets):
             udp_scans.discard((dst_ip, src_ip, None))
 
     return udp_scans, attacker_ips
+def detect_zombie_scan(packets):
+    zombie_scans = {}
+    attacker_ips = set()
+    target_ips = set()
+
+    for packet in packets:
+        if 'IP' in packet and 'TCP' in packet:
+            src_ip, dst_ip = packet.ip.src, packet.ip.dst
+            dst_port = int(packet.tcp.dstport)
+            flags = int(packet.tcp.flags, 16)
+
+            # אם יש SYN עם IP לא נגיש (לא נמצא בתוקפים), זה יכול להיות Zombie Scan
+            if flags & 0x02 and dst_ip not in target_ips and dst_ip != src_ip:
+                zombie_scans[(src_ip, dst_ip, dst_port)] = "Potential Zombie Scan"
+                attacker_ips.add(src_ip)  # ה-IP של התוקף
+
+    return zombie_scans
+
+#  (PH)
+def detect_port_scan(packets):
+    ph_scans = {}
+    src_ips_ports = defaultdict(set)  # 
+
+    for packet in packets:
+        if 'IP' in packet and 'TCP' in packet:
+            src_ip, dst_ip = packet.ip.src, packet.ip.dst
+            dst_port = int(packet.tcp.dstport)
+            flags = int(packet.tcp.flags, 16)
+
+            if flags & 0x02 and dst_ip != src_ip:  
+                src_ips_ports[src_ip].add(dst_port)
+
+  
+    for src_ip, ports in src_ips_ports.items():
+        if len(ports) > 10:  # 
+            ph_scans[src_ip] = "Port Scan (PH)"
+
+    return ph_scans
